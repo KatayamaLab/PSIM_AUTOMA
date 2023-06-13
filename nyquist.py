@@ -1,10 +1,10 @@
 import numpy as np
 
-path="./Impedance.txt"
-f=open(path,"w")
+
 
 
 def make_graph(file_path,frequency):
+
     sum_v=0
     sum_i=0
     # グラフの作成
@@ -63,9 +63,15 @@ def make_graph(file_path,frequency):
     theta=np.abs(2*np.pi*frequency*ave_theta)
     x_n=Z*np.cos(theta)
     y_n=-1*Z*np.sin(theta)
+
+    path="./Impedance.txt"
+    
     if x_n>0:
-        f.write(str(x_n)+"  ")
-        f.write(str(y_n)+"\n")
+        with open(path, "w") as f:
+            f.write(str(x_n)+"  ")
+            f.write(str(y_n)+"\n")
+    
+
     print(x_n, y_n,"f=",frequency,Z,theta)
 
 
