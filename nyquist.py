@@ -7,6 +7,8 @@ def make_graph(file_path,frequency):
 
     sum_v=0
     sum_i=0
+    
+    path="./Impedance.txt"
     # グラフの作成
     yI = np.genfromtxt(file_path,usecols=(2))
     yV = np.genfromtxt(file_path,usecols=(3))
@@ -64,10 +66,9 @@ def make_graph(file_path,frequency):
     x_n=Z*np.cos(theta)
     y_n=-1*Z*np.sin(theta)
 
-    path="./Impedance.txt"
     
     if x_n>0:
-        with open(path, "w") as f:
+        with open(path, "a") as f:
             f.write(str(x_n)+"  ")
             f.write(str(y_n)+"\n")
     
