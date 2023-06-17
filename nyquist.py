@@ -1,8 +1,6 @@
 import numpy as np
 
 
-
-
 def make_graph(file_path,frequency):
 
     sum_v=0
@@ -23,10 +21,6 @@ def make_graph(file_path,frequency):
     liv=yV[1:]-ave_v
     liI=yI[1:]-ave_i
 
-    #fig,ax1 = plt.subplots()
-
-    #ax1.plot(x,yV-ave_v,x,yI-ave_i)
-    #plt.show()
 
     sum_v=0
     sum_i=0
@@ -66,12 +60,10 @@ def make_graph(file_path,frequency):
     x_n=Z*np.cos(theta)
     y_n=-1*Z*np.sin(theta)
 
-    
     if x_n>0:
         with open(path, "a") as f:
             f.write(str(x_n)+"  ")
             f.write(str(y_n)+"\n")
-    
 
     print(x_n, y_n,"f=",frequency,Z,theta)
 
