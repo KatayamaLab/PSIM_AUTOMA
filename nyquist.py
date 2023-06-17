@@ -47,11 +47,15 @@ def make_graph(file_path,frequency):
         if liv[i]<0:
             if liv[i+1]>=0:
                 li1.append((x[i]+x[i+1])/2)
-
+        if liv[i]>0:
+            if liv[i+1]<=0:
+                li1.append((x[i]+x[i+1])/2)     
         if liI[i]<0:
             if liI[i+1]>=0:
                 li1.append((x[i]+x[i+1])/2)
-
+        if liI[i]>0:
+            if liI[i+1]<=0:
+                li1.append((x[i]+x[i+1])/2)    
 
     li = [r - l for l, r in zip(li1, li1[1:])]
 
