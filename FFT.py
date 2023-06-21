@@ -1,22 +1,58 @@
 # numpyのfftパッケージを用いて簡単にFFT解析
 # Warning: time-step is satisfied with fixed-step because we need to caluculate DFT
+# ピーク検出
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import signal
+import math
 
 fsig = 0.1
 
-impedance_path="C:/Users/ymnk2/Desktop/python-practice/mkgraph/new.txt"
+impedance_path="C:/Users/ymnk2/Documents/GitHub/PSIM_AUTOMA/Impedance.txt"
 with open(impedance_path, "w") as f:
     pass
 
 
-def make_graph(path,fs):
+# 波形(x, y)からn個のピークを幅wで検出する関数(xは0から始まる仕様）
+def findpeaks(x, y, n, w):
+    index_all = list(signal.argrelmax(y, order=w))                  # scipyのピーク検出
+    index = []                                                      # ピーク指標の空リスト
+    peaks = []                                                      # ピーク値の空リスト
+ 
+    # n個分のピーク情報(指標、値）を格納
+    for i in range(n):
+        index.append(index_all[0][i])
+        peaks.append(y[index_all[0][i]])
+    index = np.array(index) * x[1]                                  # xの分解能x[1]をかけて指標を物理軸に変換
+    return index, peaks
+
+def ChangeImpedance(V_re, V_im, I_re, I_im):
+    V=np.sqrt(V_re**2+V_im**2)
+    I=np.sqrt(I_re**2+I_im**2)
+    print("(V,I)=",V,I)
+    Z = V/I
+    theta = np.arctan(V_im/V_re)-np.arctan(I_im/I_re)
+    if np.pi/2 < np.abs(theta):
+        theta = np.abs(theta) - np.pi
+
+    print("(Z,theta)=",Z,theta)
+    Z_re=(Z*np.cos(theta))
+    Z_im=(Z*np.sin(theta))
+
+    with open(impedance_path, "a") as f:
+        f.write(str(Z_re)+"   ")
+        f.write(str(Z_im)+"   ")
+        f.write(str(fsig)+"\n")    
+
+    print(Z_re,Z_im)
+
+def make_graph(path,fs,dt):
     time  = np.loadtxt(path,usecols=0,skiprows=1)   # time
     value_I = np.loadtxt(path,usecols=2,skiprows=1)   # Iac1
     value_V = np.loadtxt(path,usecols=3,skiprows=1)   # Vac1
 
     N = len(time)                    # サンプル数
-    dt = time[2]-time[1]     # サンプリング周期 [s] ※固定ステップか確認!!
+    # dt = time[2]-time[1]     # サンプリング周期 [s] ※固定ステップか確認!!
     fn = 1/dt/2              # ナイキスト周波数
 
     # グラフのサイズ
@@ -38,7 +74,7 @@ def make_graph(path,fs):
     if(0.1<=fs<20):
         FI[(freq > fs+10)] = 0 # LPF
         FV[(freq > fs+10)] = 0 # LPF        
-        epsilon = 1
+        epsilon = 2
     if(20<fs<40):
         FI[(freq < fs-10)] = 0 # HPF
         FV[(freq < fs-10)] = 0 # HPF        
@@ -53,7 +89,7 @@ def make_graph(path,fs):
     Amp_V = 2*np.abs(FV/(N/2)) # Vac1
     # 直流成分除去
     F3 = np.copy(FV)
-    F3[(Amp_V > 3)]=0          # Amplitudeが3以上の成分をカット
+    # F3[(Amp_V > 3)]=0          # Amplitudeが3以上の成分をカット
     Amp3 = 2*np.abs(F3/(N/2))
     F3_ifft=np.fft.ifft(F3)
     
@@ -61,50 +97,30 @@ def make_graph(path,fs):
     F1_ifft=np.fft.ifft(FI)
     F1_ifft_real=F1_ifft.real*epsilon  
 
-    print(Center_Amp)
     # fig,ax = plt.subplot()
     
     V = value_V-Center_Amp
-    # 電流電圧波形の時間変化
+    # ===電流電圧波形の時間変化===========
     # plt.plot(time, V,label="V")   
     # plt.plot(time, F3_ifft_real,label="V(IFFT)")
     # plt.plot(time, value_I,label="I")
     # plt.plot(time, F1_ifft_real,label="I(IFFT)")
     # plt.legend(loc="upper right")
+    # =================================
 
     # Zとthetaを求める
-    V = np.abs(np.max(F3_ifft_real))
-    I = np.abs(np.max(F1_ifft_real))
-    Z = V/I
-    li1=[]
-    for i in range(1,len(time)-2):
-        if F3_ifft_real[i]<0:
-            if F3_ifft_real[i+1]>=0:
-                li1.append((time[i]+time[i+1])/2)
-        if F3_ifft_real[i]>0:
-            if F3_ifft_real[i+1]<=0:
-                li1.append((time[i]+time[i+1])/2)     
-        if F1_ifft_real[i]<0:
-            if F1_ifft_real[i+1]>=0:
-                li1.append((time[i]+time[i+1])/2)
-        if F1_ifft_real[i]>0:
-            if F1_ifft_real[i+1]<=0:
-                li1.append((time[i]+time[i+1])/2)
+    index_I, Amp_I_peak= findpeaks(freq, Amp_I, 1, 5)
+    index_V, Amp_V_peak= findpeaks(freq, Amp_V, 1, 5)  
     
-    li = [r - l for l, r in zip(li1, li1[1:])]
+    
+    V_cartesian=FV[2*np.abs(FV/(N/2))==Amp_V_peak]/(N/2)
+    I_cartesian=FI[2*np.abs(FI/(N/2))==Amp_I_peak]/(N/2)
 
-    delta_time = np.min(np.abs(li))      #初期化
-    theta = np.abs(2*np.pi*fsig*delta_time)
-    Re = Z*np.cos(theta)
-    Im = -1*Z*np.sin(theta)
-    
-    with open(impedance_path, "a") as f:
-        f.write(str(Re)+"   ")
-        f.write(str(Im)+"   ")
-        f.write(str(fsig)+"\n")      
-    
-    print("epsilon=",epsilon)
-    print("(Re,Im)=",Re,Im,"\n(Z,theta)=",Z,theta)
+    V_re=V_cartesian.real
+    V_im=V_cartesian.imag
+    I_re=I_cartesian.real
+    I_im=I_cartesian.imag    
+    ChangeImpedance(V_re, V_im, I_re, I_im)
     # ax = fig.add_subplot(231)
     # posは行数・列数・位置を表す3桁の整数。
     # 例えば234なら、2行3列のうち4番目の図。
