@@ -8,10 +8,10 @@ import math
 
 fsig = 0.1
 
-impedance_path="C:/Users/ymnk2/Documents/GitHub/PSIM_AUTOMA/Impedance.txt"
-with open(impedance_path, "w") as f:
-    pass
+path = "C:/Users/ymnk2/Documents/GitHub/PSIM_AUTOMA/Impedance.txt"
 
+with open(path, "w") as f:
+    pass
 
 # 波形(x, y)からn個のピークを幅wで検出する関数(xは0から始まる仕様）
 def findpeaks(x, y, n, w):
@@ -27,32 +27,34 @@ def findpeaks(x, y, n, w):
     return index, peaks
 
 def ChangeImpedance(V_re, V_im, I_re, I_im):
-    V=np.sqrt(V_re**2+V_im**2)
-    I=np.sqrt(I_re**2+I_im**2)
+    V=math.sqrt(V_re**2+V_im**2)
+    I=math.sqrt(I_re**2+I_im**2)
     print("(V,I)=",V,I)
     Z = V/I
-    theta = np.arctan(V_im/V_re)-np.arctan(I_im/I_re)
-    if np.pi/2 < np.abs(theta):
-        theta = np.abs(theta) - np.pi
+    theta = math.atan(V_im/V_re)-math.atan(I_im/I_re)
+    if math.pi/2 < np.abs(theta):
+        theta = np.abs(theta) - math.pi
 
     print("(Z,theta)=",Z,theta)
-    Z_re=(Z*np.cos(theta))
-    Z_im=(Z*np.sin(theta))
+    Z_re=(Z*math.cos(theta))
+    Z_im=(Z*math.sin(theta))
 
-    with open(impedance_path, "a") as f:
+    with open(path, "a") as f:
         f.write(str(Z_re)+"   ")
         f.write(str(Z_im)+"   ")
         f.write(str(fsig)+"\n")    
 
+    
     print(Z_re,Z_im)
 
-def make_graph(path,fs,dt):
+
+def make_graph(path,fs):
     time  = np.loadtxt(path,usecols=0,skiprows=1)   # time
     value_I = np.loadtxt(path,usecols=2,skiprows=1)   # Iac1
     value_V = np.loadtxt(path,usecols=3,skiprows=1)   # Vac1
 
     N = len(time)                    # サンプル数
-    # dt = time[2]-time[1]     # サンプリング周期 [s] ※固定ステップか確認!!
+    dt = time[2]-time[1]     # サンプリング周期 [s] ※固定ステップか確認!!
     fn = 1/dt/2              # ナイキスト周波数
 
     # グラフのサイズ
@@ -70,18 +72,19 @@ def make_graph(path,fs,dt):
     fc = fs + 100           # カット周波数
     epsilon = 0
     saze_0 = len(FI)
-
+    
+    # フィルター
     if(0.1<=fs<20):
-        FI[(freq > fs+10)] = 0 # LPF
-        FV[(freq > fs+10)] = 0 # LPF        
+        FI[(freq > fs+10)|(freq < 0.001)] = 0 # BPF
+        FV[(freq > fs+10)|(freq < 0.001)] = 0 # BPF        
         epsilon = 2
     if(20<fs<40):
-        FI[(freq < fs-10)] = 0 # HPF
+        FI[(freq < fs-10)] = 0 # HPF fs-10未満の周波数は通さない
         FV[(freq < fs-10)] = 0 # HPF        
         epsilon = 2
     elif(40<=fs<=1000):   
-        FI[(freq > 1200)|(freq < 10)] = 0 # LPF
-        FV[(freq > 1200)|(freq < 10)] = 0 # LPF        
+        FI[(freq > 1200)|(freq < 10)] = 0 # BPF
+        FV[(freq > 1200)|(freq < 10)] = 0 # BPF        
         epsilon = 2
 
 
@@ -89,7 +92,7 @@ def make_graph(path,fs,dt):
     Amp_V = 2*np.abs(FV/(N/2)) # Vac1
     # 直流成分除去
     F3 = np.copy(FV)
-    # F3[(Amp_V > 3)]=0          # Amplitudeが3以上の成分をカット
+    #F3[(Amp_V > 3)]=0          # Amplitudeが3以上の成分をカット
     Amp3 = 2*np.abs(F3/(N/2))
     F3_ifft=np.fft.ifft(F3)
     
@@ -100,19 +103,30 @@ def make_graph(path,fs,dt):
     # fig,ax = plt.subplot()
     
     V = value_V-Center_Amp
-    # ===電流電圧波形の時間変化===========
     # plt.plot(time, V,label="V")   
     # plt.plot(time, F3_ifft_real,label="V(IFFT)")
     # plt.plot(time, value_I,label="I")
     # plt.plot(time, F1_ifft_real,label="I(IFFT)")
     # plt.legend(loc="upper right")
-    # =================================
 
     # Zとthetaを求める
     index_I, Amp_I_peak= findpeaks(freq, Amp_I, 1, 5)
     index_V, Amp_V_peak= findpeaks(freq, Amp_V, 1, 5)  
-    
-    
+
+    # fig = plt.figure(figsize=(8, 5))
+    # ax = fig.add_subplot(211)
+    # ax.set_xscale("log")    
+    # ax.plot(freq[:N//2], Amp_I[:N//2])
+    # ax.scatter(index_I[:N//2], Amp_I_peak[:N//2])
+
+    # fig1 = plt.figure(figsize=(8, 5))
+    # ax1 = fig1.add_subplot(211)
+    # ax1.plot(freq[:N//2], Amp_V[:N//2])
+    # ax1.scatter(index_I[:N//2], Amp_V_peak[:N//2])
+    # ax1.set_xscale("log")
+ 
+    # plt.show()
+
     V_cartesian=FV[2*np.abs(FV/(N/2))==Amp_V_peak]/(N/2)
     I_cartesian=FI[2*np.abs(FI/(N/2))==Amp_I_peak]/(N/2)
 
@@ -121,24 +135,13 @@ def make_graph(path,fs,dt):
     I_re=I_cartesian.real
     I_im=I_cartesian.imag    
     ChangeImpedance(V_re, V_im, I_re, I_im)
-    # ax = fig.add_subplot(231)
-    # posは行数・列数・位置を表す3桁の整数。
-    # 例えば234なら、2行3列のうち4番目の図。
-    # 各数は当然10未満でなければならない
+    
+  
+
+    # print("(Re,Im)=",Re,Im,"\n(Z,theta)=",Z,theta)
+
+    # plt.show()
 
 
-    plt.show()
 
-# =====データの読み込み、以下をコメントアウトすることでこのファイルだけでデバック可能============
-# for i in range(1,21):
-#     FFT(f"C:/Users/ymnk2/Documents/GitHub/PSIM_AUTOMA/libdiag007capacitor_{i}.txt",fsig)
-#     print(100*i/20,"%" ,"has done!!","fsig=",fsig)
-#     fsig = fsig*10**(1/5)
 
-# Re = np.loadtxt(impedance_path, usecols=0)
-# Im = np.loadtxt(impedance_path, usecols=1)
-# fig, ax = plt.subplots()
-# ax.invert_yaxis()
-# plt.scatter(Re,Im)
-# plt.show()
-# ==========================================================================================
