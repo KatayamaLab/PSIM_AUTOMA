@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 from scipy import signal
 import math
 
-fsig = 0.1
 
+fsig = 0.1
 path = "C:/Users/ymnk2/Documents/GitHub/PSIM_AUTOMA/Impedance.txt"
 
 with open(path, "w") as f:
@@ -135,8 +135,6 @@ def make_graph(path,fs):
     I_re=I_cartesian.real
     I_im=I_cartesian.imag    
     ChangeImpedance(V_re, V_im, I_re, I_im)
-    
-  
 
     # print("(Re,Im)=",Re,Im,"\n(Z,theta)=",Z,theta)
 
