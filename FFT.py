@@ -6,9 +6,8 @@ import matplotlib.pyplot as plt
 from scipy import signal
 import math
 
-
 fsig = 0.1
-path = "C:/Users/ymnk2/Documents/GitHub/PSIM_AUTOMA/Impedance.txt"
+path = "./Impedance.txt"
 
 with open(path, "w") as f:
     pass
@@ -41,8 +40,7 @@ def ChangeImpedance(V_re, V_im, I_re, I_im):
 
     with open(path, "a") as f:
         f.write(str(Z_re)+"   ")
-        f.write(str(Z_im)+"   ")
-        f.write(str(fsig)+"\n")    
+        f.write(str(Z_im)+"\n")
 
     
     print(Z_re,Z_im)
