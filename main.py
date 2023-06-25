@@ -22,15 +22,15 @@ else:
 os.chdir(A)
 out = os.getcwd()
 # 理論値
-idea_path="C:/Users/ymnk2/Desktop/python-practice/mkgraph/idea.txt"
+# idea_path="C:/Users/ymnk2/Desktop/python-practice/mkgraph/idea.txt"
 # 入力ファイル(psimsch)
-psimfile_in = "C:/Users/ymnk2/Documents/GitHub/PSIM_AUTOMA/libdiag007capacitor.psimsch"
-
-freq = 0.1
+psimfile_in = "C:/Users/ymnk2/Documents/GitHub/PSIM_AUTOMA/libcell.psimsch"
+finit = 0.1
+freq = finit
 total_time = 1
 time_step = 10**(-5)
 
-with open("./Impedance.txt", "w") as f:
+with open("./Impedance2.txt", "w") as f:
     pass
 
 #  The format to call the command-line version of PSIM is as follows:
@@ -49,42 +49,40 @@ with open("./Impedance.txt", "w") as f:
 #       -s:  time step of the simulation
 #       -g:  Run Simview after the simulation is complete.
 
-imp = list()
+
 N = 21
-
-
 
 # PSIM起動および出力データ収集
 for i in range(N):
-     total_time = 0.8 + 1 / freq
-     subprocess.call(f'C:/Powersim/PSIM12.0.1_Softkey_X64/PsimCmd.exe -i {psimfile_in} -o "{out}/libdiag007capacitor_{i}.txt" -v "fsig={freq}" -t "{total_time}" -s "{time_step}"'.split(' '))
+     total_time = 0.8 + 3 / freq
+     subprocess.call(f'C:/Powersim/PSIM12.0.1_Softkey_X64/PsimCmd.exe -i {psimfile_in} -o "{out}/libcell_{i}.txt" -v "fsig={freq}" -t "{total_time}" -s "{time_step}"'.split(' '))
     #  imp.append(test.make_graph(f"C:/Users/ymnk2/Downloads/EVbattery/libdiag007capacitor_{i}.txt", freq, time_step))
     #  FFT.make_graph(f"C:/Users/ymnk2/Downloads/EVbattery/libdiag007capacitor_{i}.txt", freq, time_step)
      freq = freq*10**(1/5)
      print(100*i/20,"%","has done!!")
-     if(freq>=10):
+     if(freq >= 10):
           time_step=10**(-6)
 
-freq = 0.1
+freq = finit
 print(os.getcwd())
 os.chdir(f"{cd}/{A}")
 
 # データの読み込み
 for i in range(1,N):
-    FFT.make_graph(f"{out}/libdiag007capacitor_{i}.txt",freq)
+    FFT.make_graph(f"{out}/libcell_{i}.txt")
     print(100*i/20,"%" ,"has done!!","fsig=",freq)
     freq = freq*10**(1/5)
 
-Re = np.loadtxt(f"./Impedance.txt", usecols=0)
-Im = np.loadtxt(f"./Impedance.txt", usecols=1)
+Re = np.loadtxt(f"./Impedance2.txt", usecols=0)
+Im = np.loadtxt(f"./Impedance2.txt", usecols=1)
 
-x = np.loadtxt(idea_path, usecols=1)
-y = np.loadtxt(idea_path, usecols=2)
+# x = np.loadtxt(idea_path, usecols=1)
+# y = np.loadtxt(idea_path, usecols=2)
 
 fig, ax = plt.subplots()
 ax.invert_yaxis()
-plt.scatter(Re,Im,label="PSIM")
-plt.plot(x,y,color="r",label="theorical")
+plt.plot(Re,Im,label="PSIM")
+# plt.plot(x,y,color="r",label="theorical")
 ax.legend()
 plt.xlabel("Re")
 plt.ylabel("Im")
